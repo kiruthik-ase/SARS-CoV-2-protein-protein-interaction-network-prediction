@@ -1,0 +1,38 @@
+# Virtual environments
+xgb_env/
+.venv/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Wheel files
+*.whl
+
+# Model files
+*.json
+!package.json
+
+# Large CSV data files
+*.csv
+
+# Raw data
+Raw Data/
+
+# Diagnostics / reports
+*_diagnostics.txt
+*_report.txt
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

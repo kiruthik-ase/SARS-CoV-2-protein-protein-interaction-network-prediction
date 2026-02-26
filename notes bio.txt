@@ -1,0 +1,2 @@
+covid fasta ---> NCBI
+virus human interaction file ---> biogrid (BIOGRID-CORONAVIRUS-5.0.252.tab3.zip)
