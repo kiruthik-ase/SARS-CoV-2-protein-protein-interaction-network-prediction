@@ -1,0 +1,26 @@
+# Virtual environments
+.venv/
+xgb_env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Wheel files
+*.whl
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store
+
+# Large data files (regenerable)
+data/processed/final_ppi_dataset.csv
+data/processed/train_final.csv
+data/processed/test_final.csv
+
+# Model files (optional — uncomment to track)
+# models/

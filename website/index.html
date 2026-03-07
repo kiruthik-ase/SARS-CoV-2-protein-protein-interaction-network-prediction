@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARS-CoV-2 PPI Network Prediction</title>
+    <meta name="description" content="Machine learning prediction of SARS-CoV-2 protein-protein interactions with human host proteins using XGBoost and sequence-based features.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <span class="logo-icon">🧬</span>
+                <span>CoV-2 PPI</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#pipeline">Pipeline</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#results">Results</a></li>
+                <li><a href="#proteins">Proteins</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-badge">Bioinformatics • Machine Learning</div>
+            <h1 class="hero-title">
+                <span class="gradient-text">SARS-CoV-2</span>
+                <br>Protein–Protein Interaction
+                <br>Network Prediction
+            </h1>
+            <p class="hero-subtitle">
+                Predicting viral–human protein interactions using XGBoost classifier 
+                trained on BioGRID experimental data with 850 sequence-derived features.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-card">
+                    <div class="stat-number" data-target="14">0</div>
+                    <div class="stat-label">Viral Proteins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" data-target="8118">0</div>
+                    <div class="stat-label">Human Proteins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" data-target="850">0</div>
+                    <div class="stat-label">Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" data-target="87" data-suffix="%">0</div>
+                    <div class="stat-label">Best AUC</div>
+                </div>
+            </div>
+            <a href="#overview" class="hero-cta">Explore Project ↓</a>
+        </div>
+        <div class="hero-visual">
+            <canvas id="networkCanvas"></canvas>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <section class="section" id="overview">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">About</span>
+                <h2>Project Overview</h2>
+                <p class="section-desc">A computational approach to understand how SARS-CoV-2 hijacks human cellular machinery.</p>
+            </div>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">🦠</div>
+                    <h3>The Problem</h3>
+                    <p>SARS-CoV-2 interacts with thousands of human proteins to replicate and evade immune responses. Mapping these interactions experimentally is slow and expensive.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">🤖</div>
+                    <h3>Our Approach</h3>
+                    <p>We trained an XGBoost classifier on experimentally validated interactions from BioGRID, using protein sequence composition as features to predict novel interactions.</p>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Impact</h3>
+                    <p>Our model can rapidly screen potential viral–human interactions, prioritizing candidates for experimental validation and accelerating antiviral drug discovery.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline Section -->
+    <section class="section section-dark" id="pipeline">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Methodology</span>
+                <h2>Data Pipeline</h2>
+                <p class="section-desc">End-to-end workflow from raw biological databases to trained prediction model.</p>
+            </div>
+            <div class="pipeline-container">
+                <div class="pipeline-step" data-step="1">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <h3>Data Collection</h3>
+                        <p>Experimentally validated SARS-CoV-2 × Human interactions from <strong>BioGRID v5.0.251</strong> (COVID-19 project). Protein sequences from <strong>UniProt</strong> and <strong>NCBI RefSeq</strong>.</p>
+                        <div class="step-stats">
+                            <span>32,250 positive interactions</span>
+                            <span>14 viral proteins</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="2">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <h3>Negative Sampling</h3>
+                        <p>Random pairing of viral × human proteins not in the positive set. <strong>1:1 ratio</strong> balanced dataset to ensure unbiased training.</p>
+                        <div class="step-stats">
+                            <span>32,250 negatives</span>
+                            <span>~64,500 total pairs</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="3">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <h3>Feature Extraction</h3>
+                        <p>For each protein: <strong>Amino Acid Composition (20)</strong>, <strong>Dipeptide Composition (400)</strong>, <strong>Physicochemical properties (5)</strong> via Biopython.</p>
+                        <div class="step-stats">
+                            <span>425 features per protein</span>
+                            <span>850 per pair</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pipeline-step" data-step="4">
+                    <div class="step-number">04</div>
+                    <div class="step-content">
+                        <h3>Model Training</h3>
+                        <p><strong>XGBoost</strong> gradient boosted trees (600 estimators, max_depth=8, lr=0.05). Evaluated via stratified split, human-wise split, and leave-one-viral-out CV.</p>
+                        <div class="step-stats">
+                            <span>XGBoost classifier</span>
+                            <span>3 evaluation strategies</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Feature Engineering</span>
+                <h2>850 Sequence-Based Features</h2>
+                <p class="section-desc">Protein sequences are encoded into numerical vectors capturing composition and physicochemical properties.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-block">
+                    <div class="feature-header">
+                        <h3>Amino Acid Composition</h3>
+                        <span class="feature-count">20 per protein</span>
+                    </div>
+                    <p>Frequency of each of the 20 standard amino acids (A, C, D, E, F, G, H, I, K, L, M, N, P, Q, R, S, T, V, W, Y).</p>
+                    <div class="feature-formula">AAC(a) = count(a) / L</div>
+                </div>
+                <div class="feature-block">
+                    <div class="feature-header">
+                        <h3>Dipeptide Composition</h3>
+                        <span class="feature-count">400 per protein</span>
+                    </div>
+                    <p>Frequency of all 20×20 = 400 possible consecutive amino acid pairs, capturing local sequence patterns.</p>
+                    <div class="feature-formula">DPC(ab) = count(ab) / (L−1)</div>
+                </div>
+                <div class="feature-block">
+                    <div class="feature-header">
+                        <h3>Physicochemical Properties</h3>
+                        <span class="feature-count">5 per protein</span>
+                    </div>
+                    <p>Sequence length, molecular weight, GRAVY (hydrophobicity), aromaticity, and instability index via Biopython.</p>
+                    <div class="feature-formula">Computed via ProteinAnalysis</div>
+                </div>
+            </div>
+            <div class="feature-importance-section">
+                <h3>Top 10 Most Important Features</h3>
+                <div class="importance-chart" id="importanceChart">
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_CK</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 100%" data-value="21.2%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_AH</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 56%" data-value="11.9%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_HC</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 23%" data-value="4.8%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_EW</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 21%" data-value="4.5%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_DS</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 7%" data-value="1.5%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_MH</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 6.8%" data-value="1.4%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_VV</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 6.7%" data-value="1.4%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_KG</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 5.5%" data-value="1.2%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_FR</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 4.1%" data-value="0.9%"></div></div>
+                    </div>
+                    <div class="bar-row">
+                        <span class="bar-label">v_dpc_GD</span>
+                        <div class="bar-track"><div class="bar-fill" style="--width: 3.1%" data-value="0.7%"></div></div>
+                    </div>
+                </div>
+                <p class="importance-note">🔬 Top features are all <strong>viral dipeptide compositions</strong>, indicating the model primarily identifies unique sequence motifs in viral proteins that drive host interactions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="section section-dark" id="results">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Evaluation</span>
+                <h2>Model Performance</h2>
+                <p class="section-desc">Leave-one-viral-out cross-validation provides the most rigorous generalization test.</p>
+            </div>
+            <div class="results-metrics">
+                <div class="metric-card">
+                    <div class="metric-ring" data-value="76">
+                        <svg viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                            <circle cx="60" cy="60" r="52" class="ring-fill" style="--progress: 76"/>
+                        </svg>
+                        <div class="metric-value">0.76</div>
+                    </div>
+                    <div class="metric-label">Mean ROC-AUC</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-ring" data-value="66">
+                        <svg viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                            <circle cx="60" cy="60" r="52" class="ring-fill" style="--progress: 66"/>
+                        </svg>
+                        <div class="metric-value">0.66</div>
+                    </div>
+                    <div class="metric-label">Mean PR-AUC</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-ring" data-value="87">
+                        <svg viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" class="ring-bg"/>
+                            <circle cx="60" cy="60" r="52" class="ring-fill" style="--progress: 87"/>
+                        </svg>
+                        <div class="metric-value">0.87</div>
+                    </div>
+                    <div class="metric-label">Best ROC-AUC</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Viral Proteins Section -->
+    <section class="section" id="proteins">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Per-Protein Analysis</span>
+                <h2>Viral Protein Performance</h2>
+                <p class="section-desc">Each SARS-CoV-2 protein was held out individually and tested against a model trained on all other proteins.</p>
+            </div>
+            <div class="protein-table-wrapper">
+                <table class="protein-table">
+                    <thead>
+                        <tr>
+                            <th>Protein</th>
+                            <th>UniProt ID</th>
+                            <th>Test Samples</th>
+                            <th>ROC-AUC</th>
+                            <th>PR-AUC</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="protein-name">ORF7a</span></td>
+                            <td class="mono">P0DTC7</td>
+                            <td>6,132</td>
+                            <td class="auc-high">0.871</td>
+                            <td>0.849</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 87%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">Envelope (E)</span></td>
+                            <td class="mono">P0DTC4</td>
+                            <td>6,093</td>
+                            <td class="auc-high">0.869</td>
+                            <td>0.836</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 87%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF7b</span></td>
+                            <td class="mono">P0DTD8</td>
+                            <td>6,542</td>
+                            <td class="auc-high">0.838</td>
+                            <td>0.847</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 84%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">Membrane (M)</span></td>
+                            <td class="mono">P0DTC5</td>
+                            <td>7,294</td>
+                            <td class="auc-high">0.829</td>
+                            <td>0.873</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 83%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF6</span></td>
+                            <td class="mono">P0DTC6</td>
+                            <td>5,846</td>
+                            <td class="auc-high">0.830</td>
+                            <td>0.776</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 83%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">Nucleocapsid (N)</span></td>
+                            <td class="mono">P0DTC9</td>
+                            <td>7,412</td>
+                            <td class="auc-mid">0.797</td>
+                            <td>0.800</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 80%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF10</span></td>
+                            <td class="mono">A0A663DJA2</td>
+                            <td>5,367</td>
+                            <td class="auc-mid">0.769</td>
+                            <td>0.548</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 77%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF3a</span></td>
+                            <td class="mono">P0DTC3</td>
+                            <td>6,238</td>
+                            <td class="auc-mid">0.745</td>
+                            <td>0.740</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 75%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF8</span></td>
+                            <td class="mono">P0DTC8</td>
+                            <td>6,256</td>
+                            <td class="auc-mid">0.748</td>
+                            <td>0.706</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 75%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF1ab (replicase)</span></td>
+                            <td class="mono">P0DTD1</td>
+                            <td>20,246</td>
+                            <td class="auc-mid">0.735</td>
+                            <td>0.979</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 73%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF9b</span></td>
+                            <td class="mono">P0DTD2</td>
+                            <td>5,109</td>
+                            <td class="auc-low">0.708</td>
+                            <td>0.377</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 71%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF1ab (pp1a)</span></td>
+                            <td class="mono">P0DTC1</td>
+                            <td>4,645</td>
+                            <td class="auc-low">0.675</td>
+                            <td>0.140</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 67%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">ORF14</span></td>
+                            <td class="mono">P0DTD3</td>
+                            <td>4,770</td>
+                            <td class="auc-low">0.653</td>
+                            <td>0.265</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 65%"></div></div></td>
+                        </tr>
+                        <tr>
+                            <td><span class="protein-name">Spike (S)</span></td>
+                            <td class="mono">P0DTC2</td>
+                            <td>7,418</td>
+                            <td class="auc-low">0.626</td>
+                            <td>0.771</td>
+                            <td><div class="perf-bar"><div class="perf-fill" style="width: 63%"></div></div></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="section section-dark" id="tech">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Technology</span>
+                <h2>Tech Stack</h2>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <div class="tech-icon">🐍</div>
+                    <h4>Python 3.13</h4>
+                    <p>Core language</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🚀</div>
+                    <h4>XGBoost</h4>
+                    <p>Gradient boosted trees</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🧬</div>
+                    <h4>Biopython</h4>
+                    <p>Sequence analysis</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">📊</div>
+                    <h4>scikit-learn</h4>
+                    <p>ML evaluation</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🐼</div>
+                    <h4>pandas</h4>
+                    <p>Data processing</p>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-icon">🗃️</div>
+                    <h4>BioGRID</h4>
+                    <p>Interaction database</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>SARS-CoV-2 PPI Network Prediction · Semester 4 Bioinformatics Project</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARS-CoV-2 PPI Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <nav>
+        <div class="nav-inner">
+            <span class="logo">🧬 CoV-2 PPI Predictor</span>
+            <div class="nav-links">
+                <a href="#predict">Predict</a>
+                <a href="#network">Network</a>
+                <a href="#insights">Insights</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- PREDICTION SECTION -->
+        <section id="predict" class="section">
+            <h2>Predict Interaction</h2>
+            <p class="subtitle">Enter a SARS-CoV-2 viral protein and a human protein UniProt ID to predict their
+                interaction.</p>
+
+            <div class="predict-box">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label>🦠 Viral Protein (UniProt ID)</label>
+                        <input type="text" id="viralInput" placeholder="e.g. P0DTC2 (Spike)" list="viralList">
+                        <datalist id="viralList">
+                            <option value="P0DTC1" label="ORF1ab (pp1a)">
+                            <option value="P0DTC2" label="Spike (S)">
+                            <option value="P0DTC3" label="ORF3a">
+                            <option value="P0DTC4" label="Envelope (E)">
+                            <option value="P0DTC5" label="Membrane (M)">
+                            <option value="P0DTC6" label="ORF6">
+                            <option value="P0DTC7" label="ORF7a">
+                            <option value="P0DTC8" label="ORF8">
+                            <option value="P0DTC9" label="Nucleocapsid (N)">
+                            <option value="P0DTD1" label="ORF1ab (replicase)">
+                            <option value="P0DTD2" label="ORF9b">
+                            <option value="P0DTD3" label="ORF14">
+                            <option value="P0DTD8" label="ORF7b">
+                            <option value="A0A663DJA2" label="ORF10">
+                        </datalist>
+                    </div>
+                    <div class="input-group">
+                        <label>🧬 Human Protein (UniProt ID)</label>
+                        <input type="text" id="humanInput" placeholder="e.g. Q9BYF1 (ACE2)">
+                    </div>
+                    <button id="predictBtn" onclick="runPrediction()">
+                        <span id="btnText">Predict</span>
+                        <span id="btnSpinner" class="spinner hidden"></span>
+                    </button>
+                </div>
+
+                <div id="errorMsg" class="error hidden"></div>
+
+                <!-- RESULT -->
+                <div id="resultBox" class="result hidden">
+                    <div class="result-header">
+                        <div id="resultBadge" class="badge"></div>
+                        <div class="prob-display">
+                            <span class="prob-label">Interaction Probability</span>
+                            <span id="probValue" class="prob-value"></span>
+                        </div>
+                    </div>
+                    <div class="result-bar-track">
+                        <div id="resultBar" class="result-bar"></div>
+                    </div>
+                    <div class="confidence-text">Confidence: <span id="confValue"></span>%</div>
+
+                    <div class="protein-details">
+                        <div class="protein-card viral-card">
+                            <h4>🦠 Viral Protein</h4>
+                            <div class="detail-row"><span>ID</span><span id="vId"></span></div>
+                            <div class="detail-row"><span>Name</span><span id="vName"></span></div>
+                            <div class="detail-row"><span>Length</span><span id="vLen"></span></div>
+                            <div class="detail-row"><span>Mol. Weight</span><span id="vMw"></span></div>
+                            <div class="detail-row"><span>GRAVY</span><span id="vGravy"></span></div>
+                        </div>
+                        <div class="protein-card human-card">
+                            <h4>🧬 Human Protein</h4>
+                            <div class="detail-row"><span>ID</span><span id="hId"></span></div>
+                            <div class="detail-row"><span>Name</span><span id="hName"></span></div>
+                            <div class="detail-row"><span>Length</span><span id="hLen"></span></div>
+                            <div class="detail-row"><span>Mol. Weight</span><span id="hMw"></span></div>
+                            <div class="detail-row"><span>GRAVY</span><span id="hGravy"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NETWORK SECTION -->
+        <section id="network" class="section">
+            <h2>Interaction Network</h2>
+            <p class="subtitle">Known SARS-CoV-2 → Human protein interactions from BioGRID.
+                <span class="legend-inline">
+                    <span class="dot viral-dot"></span> Viral proteins
+                    <span class="dot human-dot"></span> Human proteins
+                </span>
+            </p>
+            <div class="network-container">
+                <canvas id="networkCanvas"></canvas>
+                <div class="network-info">
+                    <div id="nodeInfo" class="node-info hidden">
+                        <h4 id="nodeInfoTitle"></h4>
+                        <p id="nodeInfoDetail"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- INSIGHTS SECTION -->
+        <section id="insights" class="section">
+            <h2>Model Insights</h2>
+            <p class="subtitle">Key findings from XGBoost leave-one-viral-out cross-validation.</p>
+
+            <div class="insights-grid">
+                <!-- Per-protein performance -->
+                <div class="insight-card full-width">
+                    <h3>Per-Protein ROC-AUC</h3>
+                    <div class="viral-bars">
+                        {% for r in viral_results %}
+                        <div class="vbar-row">
+                            <span class="vbar-name">{{ r.viral_uniprot }}</span>
+                            <div class="vbar-track">
+                                <div class="vbar-fill {% if r.roc_auc >= 0.8 %}high{% elif r.roc_auc >= 0.7 %}mid{% else %}low{% endif %}"
+                                    style="width: {{ (r.roc_auc * 100)|round }}%"></div>
+                            </div>
+                            <span class="vbar-val">{{ "%.3f"|format(r.roc_auc) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Key stats -->
+                <div class="insight-card">
+                    <h3>Dataset Summary</h3>
+                    <div class="stat-list">
+                        <div class="stat-item">
+                            <span class="stat-val">{{ total_interactions|int }}</span>
+                            <span class="stat-desc">Known interactions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val">{{ interaction_counts|length }}</span>
+                            <span class="stat-desc">Viral proteins</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val">{{ total_human|int }}</span>
+                            <span class="stat-desc">Human targets</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val">850</span>
+                            <span class="stat-desc">Features per pair</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top features -->
+                <div class="insight-card">
+                    <h3>Top Predictive Features</h3>
+                    <div class="feat-list">
+                        {% for f in top_features[:10] %}
+                        <div class="feat-row">
+                            <span class="feat-name">{{ f.feature }}</span>
+                            <span class="feat-val">{{ "%.4f"|format(f.importance) }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <p class="feat-note">Top features are <strong>viral dipeptide compositions</strong> — the model
+                        identifies unique viral sequence motifs that drive host interactions.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>SARS-CoV-2 PPI Prediction · Semester 4 Bioinformatics Project</p>
+    </footer>
+
+    <script>
+        const NETWORK_DATA = {{ network_data| safe }};
+        const VIRAL_NAMES = {{ viral_names| safe }};
+    </script>
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
